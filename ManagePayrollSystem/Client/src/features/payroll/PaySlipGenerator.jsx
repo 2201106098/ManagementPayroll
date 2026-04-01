@@ -155,7 +155,6 @@ function BDTable({ rows, total }) {
    MAIN COMPONENT
 ══════════════════════════════════════════ */
 export default function PaySlipGenerator() {
-  const isDevMode = import.meta.env.DEV;
   const today = new Date();
   const psPageRef = useRef(null);
   const generateRequestIdRef = useRef(0);
@@ -180,7 +179,9 @@ export default function PaySlipGenerator() {
 
   useEffect(()=>{ fetchEmployees(); },[]);
   useEffect(()=>{ if(year&&month!==undefined) fetchPeriods(); },[year,month]);
-  useEffect(()=>{ if(selectedEmployee&&selectedPeriod) generatePaySlip(); },[selectedEmployee,selectedPeriod]);
+  useEffect(()=>{
+    if(selectedEmployee&&selectedPeriod) generatePaySlip({ silent: true });
+  },[selectedEmployee,selectedPeriod,year,month]);
   useEffect(()=>{
     const loadRate = async ()=>{
       if(!selectedEmployee?._id){ setCashAdvanceLimit(null); return; }
@@ -241,8 +242,10 @@ export default function PaySlipGenerator() {
             else target = list.find(p => Number(p.startDay || 0) < 16) || target;
           }
         }
-        const selectedStillValid = selectedPeriod && list.some(p => p.id === selectedPeriod.id);
-        if (!selectedPeriod || !selectedStillValid) {
+        const matchedSelectedPeriod = selectedPeriod ? list.find(p => p.id === selectedPeriod.id) : null;
+        if (matchedSelectedPeriod) {
+          setSelectedPeriod(matchedSelectedPeriod);
+        } else {
           setSelectedPeriod(target);
         }
       }
@@ -363,7 +366,7 @@ export default function PaySlipGenerator() {
     }
     return 0;
   })();
-  const undertimeDeduct = isDevMode ? 0 : undertimeDeductRaw;
+  const undertimeDeduct = 0;
   const totalAllowances = currentPaySlip?.allowances?.reduce((sum, a) => sum + Number(a.amount || 0), 0) || 0;
   const totalDeductions = currentPaySlip?.deductions?.reduce((sum, d) => sum + Number(d.amount || 0), 0) || 0;
   const adjustedTotalDeductions = totalDeductions - undertimeDeductRaw + undertimeDeduct;
